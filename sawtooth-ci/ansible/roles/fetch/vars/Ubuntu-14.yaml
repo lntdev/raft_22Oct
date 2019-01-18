@@ -1,0 +1,5 @@
+---
+
+collect_dirs:
+  - "/var/log/sawtooth-validator/"
+  - "/var/lib/sawtooth-validator/"

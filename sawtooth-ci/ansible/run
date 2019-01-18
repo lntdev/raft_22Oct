@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ -z "$TERRAFORM_STATE_DIR" ]; then
+    echo "TERRAFORM_STATE_DIR must be set"
+    exit 1
+fi
+
+ansible-playbook \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    main.yaml

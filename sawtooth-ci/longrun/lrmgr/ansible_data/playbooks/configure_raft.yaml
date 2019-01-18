@@ -1,0 +1,64 @@
+---
+- name: "Fetch Network Public Keys"
+  hosts: "{{ network_name }}"
+  tasks:
+    - fetch:
+        src: /etc/sawtooth/keys/validator.pub
+        dest: /tmp/{{ network_name }}/keys/network/{{ ansible_host }}.pub
+        flat: yes
+        validate_checksum: yes
+
+- name: "Create Raft Public Key List"
+  hosts: 127.0.0.1
+  tasks:
+
+    - name: "Format Network Keys"
+      shell: >
+        echo -n \[\" > /tmp/{{ network_name }}/keys/raftkeys;
+        paste -d , /tmp/{{ network_name }}/keys/network/*.pub | sed s/,/\",\"/g | tr -d '\n' >> /tmp/{{ network_name }}/keys/raftkeys;
+        echo -n \"\] >> /tmp/{{ network_name }}/keys/raftkeys;
+        rm -f /tmp/{{ network_name }}/keys/network/*.pub;
+      args:
+        creates: "/tmp/{{ network_name }}/keys/raftkeys"
+  become: yes
+
+- name: "Configure Raft Consensus"
+  hosts: "{{ genesis_tag }}"
+  tasks:
+    - name: "Create Config Genesis Batch"
+      command: "sawset genesis -k /etc/sawtooth/keys/validator.priv -o /home/sawtooth/config-genesis.batch"
+      args:
+        creates: "/home/sawtooth/config-genesis.batch"
+
+    - name: "Set Consensus Algorithm"
+      shell: >
+              sawset proposal create -k /etc/sawtooth/keys/validator.priv
+              sawtooth.consensus.algorithm=raft
+              -o /home/sawtooth/config.batch
+      args:
+        creates: "/home/sawtooth/config.batch"
+
+    - name: "Copy Raft Peers List"
+      copy:
+        src: /tmp/{{ network_name }}/keys/raftkeys
+        dest: /tmp/raftkeys
+        remote_src: no
+
+    - name: "Raft Settings"
+      shell: >
+              sawset proposal create -k /etc/sawtooth/keys/validator.priv
+              sawtooth.consensus.raft.period=3000
+              sawtooth.consensus.raft.election_tick=20
+              sawtooth.consensus.raft.heartbeat_tick=2
+              sawtooth.consensus.raft.peers=$(cat /tmp/raftkeys)
+              sawtooth.publisher.max_batches_per_block={{ max_batches_per_block }}
+              -o /home/sawtooth/raft_setting.batch
+      args:
+        creates: "/home/sawtooth/raft_setting.batch"
+
+    - name: "Run Sawtooth Genesis"
+      shell: "sawadm genesis /home/sawtooth/config-genesis.batch /home/sawtooth/config.batch /home/sawtooth/raft_setting.batch && cp /var/lib/sawtooth/genesis.batch /home/sawtooth/genesis.batch"
+      args:
+        creates: "/home/sawtooth/genesis.batch"
+  become: yes
+  become_user: sawtooth

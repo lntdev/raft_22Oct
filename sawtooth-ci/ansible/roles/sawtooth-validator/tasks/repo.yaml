@@ -1,0 +1,44 @@
+---
+
+- name: "Update package cache (apt)"
+  apt: update_cache=yes cache_valid_time=3600
+  when: ansible_pkg_mgr == "apt"
+
+- name: Install repository creation packages (apt)
+  apt:
+    name={{ item }}
+    state=present
+  with_items: "{{ sawtooth_repo_creation_deps }}"
+  when: ansible_pkg_mgr == "apt"
+
+- name: Create packages directory
+  file:
+      path={{ sawtooth_package_local_dir }}
+      state=directory
+
+- name: Copy package files
+  copy:
+    src={{ item }}
+    dest={{ sawtooth_package_local_dir }}
+    owner=root
+    group=root
+    mode=0644
+  with_fileglob: "{{ sawtooth_packages_dir }}/{{ sawtooth_package_fileglob }}"
+  register: copy_result
+
+- name: Create package manifest (apt)
+  shell: dpkg-scanpackages . /dev/null dists/sawtooth/stable/binary-amd64/ | gzip -9c > Packages.gz
+  args:
+      chdir: /root/repos/dists/sawtooth/stable/binary-amd64
+  when: ansible_pkg_mgr == "apt" and copy_result.changed == True
+
+- name: "Update package cache (apt)"
+  apt: update_cache=yes
+  when: ansible_pkg_mgr == "apt" and copy_result.changed == True
+
+- name: Configure local repository (apt)
+  apt_repository:
+    repo="deb file://{{sawtooth_repo_dir}} sawtooth stable" state=present
+  when: ansible_pkg_mgr == "apt"
+
+

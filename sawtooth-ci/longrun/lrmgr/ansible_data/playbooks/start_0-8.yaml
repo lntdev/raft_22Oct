@@ -1,0 +1,60 @@
+---
+- name: Generate Keys
+  hosts: "{{ network_name }}"
+  tasks:
+    - command: "sawtooth admin keygen"
+      args:
+        creates: "/etc/sawtooth/keys/validator.*"
+  become: yes
+  become_user: sawtooth
+
+- name: Bootstrap Genesis Node
+  hosts: "{{ genesis_tag }}"
+  tasks:
+    - name: "Create Config Genesis Batch"
+      command: "sawtooth config genesis -k /etc/sawtooth/keys/validator.priv -o /home/sawtooth/config-genesis.batch"
+      args:
+        creates: "/home/sawtooth/config-genesis.batch"
+
+    - name: "Set Consensus Algorithm"
+      shell: >
+              sawtooth config proposal create -k /etc/sawtooth/keys/validator.priv
+              sawtooth.consensus.algorithm=poet
+              sawtooth.poet.report_public_key_pem="$(cat /etc/sawtooth/simulator_rk_pub.pem)"
+              sawtooth.poet.valid_enclave_measurements=$(poet enclave measurement)
+              sawtooth.poet.valid_enclave_basenames=$(poet enclave basename)
+              -o /home/sawtooth/config.batch
+      args:
+        creates: "/home/sawtooth/config.batch"
+
+    - name: "PoET settings"
+      shell: >
+              sawtooth config proposal create -k /etc/sawtooth/keys/validator.priv
+              sawtooth.poet.target_wait_time=30
+              sawtooth.poet.initial_wait_time=150
+              sawtooth.publisher.max_batches_per_block=100
+              -o /home/sawtooth/poet_setting.batch
+      args:
+        creates: "/home/sawtooth/poet_setting.batch"
+
+    - name: "Create Poet Genesis Batch"
+      command: "poet genesis -k /etc/sawtooth/keys/validator.priv -o /home/sawtooth/poet.batch"
+      args:
+        creates: "/home/sawtooth/poet.batch"
+
+    - name: "Run Sawtooth Genesis"
+      shell: "sawtooth admin genesis /home/sawtooth/config-genesis.batch /home/sawtooth/config.batch /home/sawtooth/poet.batch /home/sawtooth/poet_setting.batch && cp /var/lib/sawtooth/genesis.batch /home/sawtooth/genesis.batch"
+      args:
+        creates: "/home/sawtooth/genesis.batch"
+  become: yes
+  become_user: sawtooth
+
+- name: Start Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Start Sawtooth Services"
+      systemd:
+        state: started
+        name: "{{ item }}"
+      with_items: "{{ sawtooth_services }}"
+  become: yes

@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [ -z "$TERRAFORM_STATE_DIR" ]; then
+    echo "TERRAFORM_STATE_DIR must be set"
+    exit 1
+fi
+
+ansible \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    vgroup0 --list-hosts
+
+ansible \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    -b \
+    vgroup0 \
+    -a "start sawtooth-validator"
+
+echo "Sleeping..."
+sleep 10
+
+ansible \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    -b \
+    vgroup1 \
+    -a "start sawtooth-validator"
+
+echo "Sleeping..."
+sleep 10
+
+ansible \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    -b \
+    vgroup2 \
+    -a "start sawtooth-validator"
+

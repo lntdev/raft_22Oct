@@ -1,0 +1,6 @@
+---
+- name: Verify Sawtooth Network Exists
+  hosts: "{{ network_name }}"
+  tasks:
+    - debug:
+        msg: "Network node {{ ansible_hostname }} is online"

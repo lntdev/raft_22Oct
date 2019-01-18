@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+
+echo -e "Creating release for $1"
+
+info() {
+    echo -e "\033[0;36m\n[--- $1 ---]\n\033[0m"
+}
+
+export GNUPGHOME=~/.gnupg/
+gpg --list-keys
+
+stamp=$(date +%F-%H)
+
+
+info "Downloading archive"
+wget https://build.sawtooth.me/view/all/job/debs/job/build-debs-rc/lastSuccessfulBuild/artifact/*zip*/archive.zip -O tmp/$stamp.zip
+
+
+info "Uncompressing archive"
+mkdir tmp/$stamp
+unzip -q tmp/$stamp.zip -d tmp/$stamp
+
+
+info "Adding artifacts to repository"
+ls -al tmp/$stamp/archive/build/debs/
+aptly repo add 0.9-rc tmp/$stamp/archive/build/debs/*/*sawtooth*.deb
+info "Creating snapshot"
+aptly snapshot create $1 from repo 0.9-rc
+info "Publishing snapshot"
+# aptly publish switch xenial s3:repo.sawtooth.me:ubuntu/nightly nightly-$stamp
+aptly publish switch xenial s3:repo.sawtooth.me:ubuntu/0.9/stable $1
+
+info "Cleanup time"
+rm tmp/$stamp.zip
+rm -rf tmp/$stamp

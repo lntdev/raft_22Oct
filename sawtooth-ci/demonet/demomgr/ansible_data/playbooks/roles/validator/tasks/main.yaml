@@ -1,0 +1,32 @@
+- name: Update Apt Cache
+  apt: update_cache=yes
+
+- name: Install Sawtooth
+  apt:
+    name={{ item }}
+    state=present
+    force=yes
+  with_items: "{{ sawtooth_packages }}"
+
+- name: Set Hostname
+  hostname: name={{ ec2_tag_Name }} # Needs to be changed if not using ec2
+
+- name: Configure Sawtooth Validator
+  template:
+      src: "{{ item }}.j2"
+      dest: "/etc/sawtooth-validator/{{ item }}"
+      backup: yes
+  with_items:
+    - txnvalidator.js
+    - txnvalidator-logging.yaml
+
+- name: Set Sawtooth Validator Options
+  template:
+      src: sawtooth-validator.j2
+      dest: /etc/default/sawtooth-validator
+      backup: yes
+
+- name: Generate Keys
+  command: "sawtooth keygen --key-dir /etc/sawtooth-validator/keys {{ ansible_hostname|quote }}"
+  args:
+    creates: "/etc/sawtooth-validator/keys/{{ ansible_hostname }}.*"

@@ -1,0 +1,33 @@
+---
+- name: Generate Keys
+  hosts: "{{ network_name }}"
+  tasks:
+    - command: "sawadm keygen"
+      args:
+        creates: "/etc/sawtooth/keys/validator.*"
+  become: yes
+
+- include: configure_raft.yaml
+
+- name: "Create User Keys"
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Generate User Keys"
+      shell: "sawtooth keygen"
+      args:
+        creates: "/home/sawtooth/.sawtooth/keys/sawtooth.priv"
+
+  become: yes
+  become_user: sawtooth
+
+- name: Start Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Start Sawtooth Services"
+      systemd:
+        state: started
+        name: "{{ item }}"
+      with_items: "{{ sawtooth_services }}"
+  become: yes
+
+#- include: setup_onchain_permissions.yaml

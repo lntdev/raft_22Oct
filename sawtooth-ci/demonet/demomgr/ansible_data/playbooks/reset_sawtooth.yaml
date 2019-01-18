@@ -1,0 +1,9 @@
+---
+- name: Reset Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Run `sawtooth admin clean --state`"
+      command: "sawtooth admin clean --state"
+      args:
+        removes: "/var/lib/sawtooth-validator/*"
+  become: yes

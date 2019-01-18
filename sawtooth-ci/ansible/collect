@@ -1,0 +1,8 @@
+if [ ! -f ./~/tests ]; then
+	mkdir ~/tests
+fi
+
+ansible-playbook \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    fetch.yaml

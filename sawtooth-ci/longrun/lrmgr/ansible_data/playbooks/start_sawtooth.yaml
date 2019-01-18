@@ -1,0 +1,6 @@
+---
+- include: start_0-8.yaml
+  when: sawtooth_version == '0.8'
+
+- include: start_1-0.yaml
+  when: sawtooth_version == '1.0'

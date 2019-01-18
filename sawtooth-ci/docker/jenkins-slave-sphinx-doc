@@ -1,0 +1,9 @@
+FROM jenkins-slave-maiden-lane
+
+RUN apt-get update && apt-get install -y -q \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-latex-recommended \
+    texlive-fonts-recommended \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*

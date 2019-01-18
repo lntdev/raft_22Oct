@@ -1,0 +1,37 @@
+---
+  version : 1
+  disable_existing_loggers: False
+  formatters:
+    simple:
+      format: "[%(asctime)s [%(threadName)s] %(name)s %(levelname)s] %(message)s"
+      datefmt: "%H:%M:%S"
+    remote:
+      format: "[%(threadName)s] [%(name)s %(levelname)s] %(message)s]"
+      datefmt: "%H:%M:%S"
+  handlers:
+    syslog:
+      class: logging.handlers.SysLogHandler
+      level: DEBUG
+      formatter: remote
+      address:
+        - '{{ sawtooth_logging_syslog_ip }}'
+        - 514
+      facility: '{{ sawtooth_logging_syslog_facility }}'
+    debug:
+      class: logging.handlers.RotatingFileHandler
+      level: DEBUG
+      formatter: simple
+      filename: /var/log/sawtooth-validator/{{ ansible_hostname }}-debug.log
+      maxBytes: 5000000
+      backupCount: 20
+    error:
+      class: logging.handlers.RotatingFileHandler
+      level: ERROR
+      formatter: simple
+      filename: /var/log/sawtooth-validator/{{ ansible_hostname }}-error.log
+      maxBytes: 5000000
+      backupCount: 20
+  root:
+    level: INFO
+    handlers: [syslog, error, debug]
+...

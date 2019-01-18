@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# ask each validator to emit its endpoint registry, return
+# the node IP and it's count of hosts in the registry
+# IP,COUNT is returned for each node
+
+# if you just want the list of IP addrs, pass this a -i
+# get the list of all the validator IP addrs
+
+. config.sh
+
+ips=$(./inventory --pretty | grep ssh_host | awk '{print $2}' \
+     | sed 's/"//g;s/,//g;')
+
+for i in $ips ; do
+    echo -n "${i}"
+    if [ "$*" != "-i" ]; then
+	echo -n ","
+	curl --max-time 2 -s \
+	     http://${i}:8800/store/EndpointRegistryTransaction/* \
+	    | json_pp 2>/dev/null | grep -c 'Host"'
+    else
+	echo ""
+    fi
+done

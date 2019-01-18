@@ -1,0 +1,18 @@
+---
+# Playbook for uninstalling sawtooth validator.
+
+- name: Uninstall sawtooth package
+  hosts: "{{ network_name }}"
+  become: yes
+  tasks:
+    - name: remove sawtooth package
+      apt: name="python3-sawtooth*" purge=yes state=absent
+    - name: remove smallbank package
+      apt: name="sawtooth-smallbank*" purge=yes state=absent
+
+    - name: remove /etc/apt/sources.list.d/sawtooth-lake.list
+      file:
+        path: '/etc/apt/sources.list.d/{{ item }}' 
+        state: absent
+      with_items:
+        - "sawtooth-lake.list"

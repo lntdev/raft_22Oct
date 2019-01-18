@@ -1,0 +1,29 @@
+---
+
+- name: Include distribution-specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version}}.yaml"
+    - "{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yaml"
+
+- include: tasks/repo.yaml
+
+- name: Install Sawtooth Lake (apt)
+  apt:
+    name={{ item }}
+    state=present
+    force=yes
+  with_items: "{{ sawtooth_packages }}"
+  when: ansible_pkg_mgr == "apt"
+
+- name: Configure txnvalidator.js
+  template:
+      src: txnvalidator.js.j2
+      dest: /etc/sawtooth-validator/txnvalidator.js
+      backup: yes
+
+- name: Configure /etc/default/sawtooth-validator
+  template:
+      src: sawtooth-validator.j2
+      dest: /etc/default/sawtooth-validator
+      backup: yes

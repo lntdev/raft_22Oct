@@ -1,0 +1,56 @@
+Host *.intel.com
+ProxyCommand none
+StrictHostKeyChecking no
+
+Host github.com
+ProxyCommand /usr/bin/connect -5 -S proxy-us.intel.com:1080 %h %p
+StrictHostKeyChecking no
+
+Host *.github.com
+ProxyCommand /usr/bin/connect -5 -S proxy-us.intel.com:1080 %h %p
+StrictHostKeyChecking no
+
+Host intelledger.github.io.github.com
+HostName github.com
+IdentityFile ~/.ssh/intelledger.github.io
+
+Host sawtooth-core.github.com
+HostName github.com
+IdentityFile ~/.ssh/sawtooth-core
+
+Host sawtooth-ci.github.com
+Hostname github.com
+Identityfile ~/.ssh/sawtooth-ci
+
+Host sawtooth-r3.github.com
+Hostname github.com
+Identityfile ~/.ssh/sawtooth-r3
+
+Host sawtooth-tickets.github.com
+Hostname github.com
+Identityfile ~/.ssh/sawtooth-tickets
+
+#hyperledger keys
+Host sawtooth-core-hl.github.com
+HostName github.com
+IdentityFile ~/.ssh/hyperledger/sawtooth-core
+
+Host scrape
+Hostname 50.241.45.244
+Port 12288
+ProxyCommand /usr/bin/connect -5 -S proxy-us.intel.com:1080 %h %p
+StrictHostKeyChecking no
+Identityfile ~/.ssh/scrape
+
+Host frost
+Hostname ec2-52-202-97-218.compute-1.amazonaws.com
+ProxyCommand /usr/bin/connect -5 -S proxy-us.intel.com:1080 %h %p
+StrictHostKeyChecking no
+Identityfile ~/.ssh/frost
+
+Host blizzard
+Hostname 54.211.221.144
+User ubuntu
+ProxyCommand /usr/bin/connect -5 -S proxy-us.intel.com:1080 %h %p
+StrictHostKeyChecking no
+IdentityFile ~/.ssh/publish-to-repo

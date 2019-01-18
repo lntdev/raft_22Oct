@@ -1,0 +1,88 @@
+{
+    "Listen" : [
+{% for ear in sawtooth_validator_listen %}
+        "{{ear}}"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+    ],
+
+    ## only needed if running behind a NAT firewall
+    "Endpoint" : {
+        "Host" : "{{ ansible_ssh_host }}",
+        "Port" : {{ sawtooth_validator_endpoint_port }},
+        "HttpPort" : {{ sawtooth_validator_endpoint_http_port }}
+     },
+
+    "NodeName" : "{{ ansible_hostname }}",
+
+    "LedgerURL" : [
+{% for host in ansible_play_hosts %}
+         "http://{{ hostvars[host]['ansible_ssh_host'] }}:{{ sawtooth_validator_endpoint_http_port }}/"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+    ],
+
+    "Peers" : [
+{% for host in ansible_play_hosts %}
+         "{{ hostvars[host]['ansible_hostname'] }}"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+    ],
+
+    ## pick the ledger type
+    "LedgerType" : "{{ sawtooth_validator_ledger_type }}",
+{% if ansible_hostname == genesis_node %}
+    "InitialConnectivity" : 0,
+{% else %}
+    "InitialConnectivity" : {{ sawtooth_validator_initial_connectivity }},
+{% endif %}
+
+    ## backing store
+    "StoreType" : "{{ sawtooth_validator_store_type }}",
+
+    ## Worker Limits
+    "WebPoolSize" : {{ sawtooth_validator_web_pool_size }},
+    "MaxWebWorkers" : {{ sawtooth_validator_max_web_workers }},
+
+    ## configuration of the ledger wait time certificate
+    "TargetWaitTime" : {{ sawtooth_validator_target_wait_time }},
+    "InitialWaitTime" : {{ sawtooth_validator_initial_wait_time }},
+    "CertificateSampleLength" : {{ sawtooth_validator_certificate_sample_length }},
+
+    ## configuration of the block sizes
+    "MinTransactionsPerBlock" : {{ sawtooth_validator_min_transactions_per_block }},
+    "MaxTransactionsPerBlock" : {{ sawtooth_validator_max_transactions_per_block }},
+
+    ## configuration of the topology
+    "TopologyAlgorithm" : "{{ sawtooth_validator_topology_algorithm }}",
+    "TargetConnectivity" : {{ sawtooth_validator_target_connectivity }},
+
+    ## Logging config
+    "LogConfigFile" : "{{ sawtooth_logging_config_path }}",
+
+    ## configuration of the network flow control
+    "NetworkFlowRate" : {{ sawtooth_validator_network_flow_rate }},
+    "NetworkBurstRate" : {{ sawtooth_validator_network_burst_rate }},
+    "NetworkDelayRange" : [ {{ sawtooth_validator_delay_range|join(', ') }} ],
+    "UseFixedDelay" : {{ sawtooth_validator_use_fixed_delay }},
+
+    ## configuration of the transaction families to include
+    ## in the validator
+    "TransactionFamilies" : [
+{% for family in sawtooth_validator_transaction_families.split(',') %}
+        "{{family}}"{% if not loop.last %},{% endif %}
+
+{% endfor %}
+    ],
+
+    ## administration node, the only node identifier from which
+    ## we will accept shutdown messages
+    "AdministrationNode" : "{{ sawtooth_validator_administration_node }}",
+
+{% if not sawtooth_local_validation %}
+    "LocalValidation" : false,
+{% endif %}
+
+    ## key file
+    "KeyFile" : "{{ sawtooth_validator_key_file }}"
+}

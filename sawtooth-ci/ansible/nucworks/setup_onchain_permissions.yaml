@@ -1,0 +1,96 @@
+---
+- name: "Fetch Network Keys"
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Fetch Network Public Key"
+      fetch:
+        src: /etc/sawtooth/keys/validator.pub
+        dest: /tmp/{{ network_name }}/keys/network/{{ ansible_host }}.pub
+        flat: yes
+        validate_checksum: yes
+
+    - name: "Fetch Transactor Public Key"
+      fetch:
+        src: /home/sawtooth/.sawtooth/keys/sawtooth.pub
+        dest: /tmp/{{ network_name }}/keys/transactor/{{ ansible_host }}.pub
+        flat: yes
+        validate_checksum: yes
+
+- name: "Create Network Key List"
+  hosts: 127.0.0.1
+  tasks:
+    - name: "Format Network Keys"
+      shell: for key in /tmp/{{ network_name }}/keys/network/*.pub; do echo \"PERMIT_KEY $(cat $key)\";done | tr '\n' ' ' > /tmp/{{ network_name }}/keys/networkkeys && rm -f /tmp/{{ network_name }}/keys/network/*.pub
+  become: yes
+
+- name: "Create Transactor Key List"
+  hosts: 127.0.0.1
+  tasks:
+    - name: "Format Transactor Keys"
+      shell: for key in /tmp/{{ network_name }}/keys/transactor/*.pub; do echo \"PERMIT_KEY $(cat $key)\";done | tr '\n' ' ' > /tmp/{{ network_name }}/keys/transactorkeys && rm -f /tmp/{{ network_name }}/keys/transactor/*.pub
+  become: yes
+
+- name: "Copy Network keys"
+  hosts: "{{ genesis_tag }}"
+  tasks:
+  - copy:
+      src: /tmp/{{ network_name }}/keys/networkkeys
+      dest: /tmp/networkkeys
+      remote_src: no
+  become: yes
+
+- name: "Copy Transactor keys"
+  hosts: "{{ genesis_tag }}"
+  tasks:
+  - copy:
+      src: /tmp/{{ network_name }}/keys/transactorkeys
+      dest: /tmp/transactorkeys
+      remote_src: no
+  become: yes
+
+- name: "Set Network Permissions"
+  hosts: "{{ genesis_tag }}"
+  tasks:
+    - name: "Set Role Key"
+      shell:
+            sawset proposal create --key /etc/sawtooth/keys/validator.priv --url http://{{ genesis_ip }}:8080
+            sawtooth.identity.allowed_keys=$(cat /home/sawtooth/.sawtooth/keys/sawtooth.pub)
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Create Transaction Access Policy"
+      shell: echo sawtooth identity policy create policy_1 "$(cat /tmp/transactorkeys)" \"PERMIT_KEY 02c0ca7aa5af7ed25a0b9128518095f165c9eebf04f8e0980217e904bbc49e77eb\" \"DENY_KEY *\" --wait 300 --url http://{{ genesis_ip }}:8080 >/tmp/transactionpolicy.sh
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Create Network Access Policy"
+      shell: echo sawtooth identity policy create policy_2 "$(cat /tmp/networkkeys)"  \"DENY_KEY *\" --wait 300 --url http://{{ genesis_ip }}:8080 >/tmp/networkpolicy.sh
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Apply Transaction Access Policy"
+      shell: sh /tmp/transactionpolicy.sh
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Apply Network Access Policy"
+      shell: sh /tmp/networkpolicy.sh
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Create Identity Role"
+      shell: sawtooth identity role create transactor policy_1 --wait 300 --url http://{{ genesis_ip }}:8080
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Create Network Role"
+      shell: sawtooth identity role create network policy_2 --wait 300 --url http://{{ genesis_ip }}:8080
+      args:
+        creates: "/home/sawtooth/.sawtooth/onchain-configured"
+
+    - name: "Create onchain-configured"
+      file:
+        path: /home/sawtooth/.sawtooth/onchain-configured
+        state: touch
+  become: yes
+  become_user: sawtooth

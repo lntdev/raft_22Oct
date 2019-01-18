@@ -1,0 +1,22 @@
+#
+# Sawtooth Lake -- REST API Configuration
+#
+
+# The port and host for the api to run on
+bind = ["{{ ec2_private_ip_address }}:8080"]
+
+# The url to connect to a running Validator
+connect = "tcp://localhost:4004"
+
+# Seconds to wait for a validator response
+#   timeout = 300
+
+# The host and port for Open TSDB database used for metrics
+opentsdb_url = "{{ influx_url }}"
+
+# The name of the database used for storing metrics
+opentsdb_db = "{{ influx_database }}"
+
+opentsdb_username = ""
+
+opentsdb_password = ""

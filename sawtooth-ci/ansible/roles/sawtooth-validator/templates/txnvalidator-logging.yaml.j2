@@ -1,0 +1,45 @@
+---
+  version : 1
+  disable_existing_loggers: False
+  formatters:
+    simple:
+      format: "[%(asctime)s [%(threadName)s] %(name)s %(levelname)s] %(message)s"
+      datefmt: "%H:%M:%S"
+    remote:
+      format: "[%(threadName)s] [%(name)s %(levelname)s] %(message)s]"
+      datefmt: "%H:%M:%S"
+  handlers:
+    syslog:
+      class: logging.handlers.SysLogHandler
+      level: DEBUG
+      formatter: remote
+      address:
+        - '52.202.97.218'
+        - 514
+      facility: 'local5'
+    debug:
+      class: logging.handlers.RotatingFileHandler
+      level: DEBUG
+      formatter: simple
+      filename: /var/log/sawtooth-validator/{{ sawtooth_validator_node_name }}-debug.log
+      maxBytes: 5000000
+      backupCount: 20
+    error:
+      class: logging.FileHandler
+      level: ERROR
+      formatter: simple
+      filename: /var/log/sawtooth-validator/{{ sawtooth_validator_node_name }}-error.log
+    gossip_core:
+      class: logging.FileHandler
+      level: DEBUG
+      formatter: simple
+      filename: /var/log/sawtooth-validator/{{ sawtooth_validator_node_name }}-gossip_core.log
+  loggers:
+    gossip.gossip_core:
+      level: INFO
+      handlers: [gossip_core]
+      propagate: no
+  root:
+    level: INFO
+    handlers: [syslog, error, debug]
+...

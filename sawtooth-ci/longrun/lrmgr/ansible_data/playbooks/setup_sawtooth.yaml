@@ -1,0 +1,10 @@
+---
+# Playbook for installing and configuring sawtooth validator.
+
+- name: Setup Validators
+  hosts: "{{ network_name }}"
+  roles:
+    - validator
+  become: yes
+  any_errors_fatal: yes
+

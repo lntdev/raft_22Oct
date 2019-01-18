@@ -1,0 +1,44 @@
+---
+- name: "Remove batch files in /home/sawtooth"
+  hosts: "{{ play_hosts[0] }}"
+  #hosts: "{{ network_name  }}"
+  tasks:
+    - file:
+        path: "/home/sawtooth/{{ item }}"
+        state: absent
+      with_items:
+        - "config-genesis.batch"
+        - "config.batch"
+        - "genesis.batch"
+        - "poet.batch"
+        - "poet_setting.batch"
+  become: yes
+
+- name: Reset Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Remove /var/lib/sawtooth/"
+      file:
+        path: /var/lib/sawtooth
+        state: absent
+
+    - name: "Create empty /var/lib/sawtooth"
+      file:
+        path: /var/lib/sawtooth
+        state: directory
+        owner: sawtooth
+        group: sawtooth
+
+    - name: "Remove /var/log/sawtooth/"
+      file:
+        path: /var/log/sawtooth
+        state: absent
+
+    - name: "Create empty /var/log/sawtooth"
+      file:
+        path: /var/log/sawtooth
+        state: directory
+        owner: sawtooth
+        group: sawtooth
+
+  become: yes

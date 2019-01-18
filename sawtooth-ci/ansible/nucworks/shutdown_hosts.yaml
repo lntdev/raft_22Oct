@@ -1,0 +1,14 @@
+---
+# Playbook for installing and configuring sawtooth validator.
+
+- name: Shutdown Validators
+  hosts: "{{ network_name }}"
+  become: yes
+  tasks:
+    - command: /sbin/shutdown
+
+    - name: wait for server to finish rebooting
+      become: no
+      local_action: wait_for host="{{ network_name  }}" search_regex=OpenSSH port=60240 timeout=300
+  
+

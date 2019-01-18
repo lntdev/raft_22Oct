@@ -1,0 +1,18 @@
+---
+- name: Fetch Keys
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: Fetch Private Key
+      fetch:
+        src: /etc/sawtooth/keys/validator.priv
+        dest: /opt/sawtooth-ci/ansible/nucworks/keys//{{ ansible_host }}/validator.priv
+        flat: yes
+        validate_checksum: yes
+
+    - name: Fetch Public Key
+      fetch:
+        src: /etc/sawtooth/keys/validator.pub
+        dest: /opt/sawtooth-ci/ansible/nucworks/keys/{{ ansible_host }}/validator.pub
+        flat: yes
+        validate_checksum: yes
+  become: yes

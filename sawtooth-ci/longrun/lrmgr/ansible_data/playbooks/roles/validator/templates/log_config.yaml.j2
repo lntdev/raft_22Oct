@@ -1,0 +1,61 @@
+disable_existing_loggers: false
+formatters:
+  simple:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '[%(asctime)s.%(msecs)03d [%(threadName)s] %(module)s %(levelname)s] %(message)s'
+  remote:
+    format: '[{{ ec2_tag_Name }}] %(levelname)8s %(threadName)29s %(module)28s %(message)s'
+handlers:
+  debug:
+    backupCount: 20
+    class: logging.handlers.RotatingFileHandler
+    filename: /var/log/sawtooth/{{ ec2_tag_Name }}-validator-debug.log
+    formatter: simple
+    level: DEBUG
+    maxBytes: 5000000
+  error:
+    backupCount: 20
+    class: logging.handlers.RotatingFileHandler
+    filename: /var/log/sawtooth/{{ ec2_tag_Name }}-validator-error.log
+    formatter: simple
+    level: ERROR
+    maxBytes: 5000000
+  interconnect:
+    backupCount: 20
+    class: logging.handlers.RotatingFileHandler
+    filename: /var/log/sawtooth/{{ ec2_tag_Name }}-interconnect.log
+    formatter: simple
+    level: ERROR
+    maxBytes: 5000000
+  tp_state_handlers:
+    backupCount: 20
+    class: logging.handlers.RotatingFileHandler
+    filename: /var/log/sawtooth/lr7-node0-tp_state_handlers.log
+    formatter: simple
+    level: ERROR
+    maxBytes: 5000000
+  syslog:
+    address:
+    - '{{ syslog_server }}'
+    - {{ syslog_port }}
+    class: logging.handlers.SysLogHandler
+    formatter: remote
+    level: DEBUG
+loggers:
+  sawtooth_validator.networking.interconnect:
+    handlers:
+    - interconnect
+    level: ERROR
+    propagate: true
+  sawtooth_validator.execution.tp_state_handlers:
+    handlers:
+    - tp_state_handlers
+    level: ERROR
+    propagate: true
+root:
+  handlers:
+  - syslog
+  - error
+  - debug
+  level: DEBUG
+version: 1

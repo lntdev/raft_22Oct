@@ -1,0 +1,36 @@
+disable_existing_loggers: false
+formatters:
+  simple:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '[%(asctime)s.%(msecs)03d [%(threadName)s] %(module)s %(levelname)s] %(message)s'
+  remote:
+    format: '[{{ ec2_tag_Name }}] %(levelname)8s %(threadName)29s %(module)28s %(message)s'
+handlers:
+  debug:
+    backupCount: 20
+    class: logging.handlers.RotatingFileHandler
+    filename: /var/log/sawtooth/{{ ec2_tag_Name }}-rest_api-debug.log
+    formatter: simple
+    level: DEBUG
+    maxBytes: 5000000
+  error:
+    backupCount: 20
+    class: logging.handlers.RotatingFileHandler
+    filename: /var/log/sawtooth/{{ ec2_tag_Name }}-rest_api-error.log
+    formatter: simple
+    level: ERROR
+    maxBytes: 5000000
+  syslog:
+    address:
+    - '{{ syslog_server }}'
+    - {{ syslog_port }}
+    class: logging.handlers.SysLogHandler
+    formatter: remote
+    level: DEBUG
+root:
+  handlers:
+  - syslog
+  - error
+  - debug
+  level: DEBUG
+version: 1

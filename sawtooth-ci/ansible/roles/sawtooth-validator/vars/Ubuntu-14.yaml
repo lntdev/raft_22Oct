@@ -1,0 +1,28 @@
+---
+
+sawtooth_packages:
+  - python-sawtooth-core
+  - python-sawtooth-validator
+  - python-sawtooth-arcade
+
+sawtooth_pip_packages:
+  - psutil
+  - cbor
+  - colorlog
+  - enum34
+  - ipaddr
+  - numpy
+  - ecdsa
+  - pybitcointools
+  - pyyaml
+  - requests
+  - twisted
+
+sawtooth_package_fileglob: "*.deb"
+
+sawtooth_repo_creation_deps:
+  - dpkg-dev
+
+sawtooth_repo_dir: "/root/repos"
+
+sawtooth_package_local_dir: "{{ sawtooth_repo_dir }}/dists/sawtooth/stable/binary-amd64"

@@ -1,0 +1,57 @@
+---
+- name: Install Debs From Jenkins
+  hosts: "{{ network_name }}"
+
+  tasks:
+    - name: Install unzip
+      apt:
+          name=unzip
+          state=present
+          force=yes
+
+    - name: Clean packages directory
+      file: path=/tmp/sawtooth-packages state=absent
+
+    - name: Create packages directory
+      file: path=/tmp/sawtooth-packages state=directory
+
+#    - name: Download .zip from PR job
+ #     unarchive:
+#        src: "https://build.sawtooth.me/view/all/job/Sawtooth-Hyperledger/job/sawtooth-core/view/change-requests/job/PR-{{ pr_number }}/lastSuccessfulBuild/artifact/*zip*/archive.zip"
+#        src: "https://build.sawtooth.me/view/all/job/Sawtooth-Hyperledger/job/sawtooth-core/job/{{ pr_number }}/lastSuccessfulBuild/artifact/*zip*/archive.zip"
+#        dest: /tmp/sawtooth-packages
+#        remote_src: yes
+
+    - name: Download .zip from a PR job
+      shell: >
+              wget https://build.sawtooth.me/view/all/job/Sawtooth-Hyperledger/job/sawtooth-core/job/{{ pr_number }}/lastSuccessfulBuild/artifact/*zip*/archive.zip
+      args:
+        chdir: /tmp/sawtooth-packages
+
+    - name: Install new Sawtooth python packages
+      shell: >
+              dpkg -i python3-sawtooth-cli*.deb
+              python3-sawtooth-identity*.deb
+              python3-sawtooth-intkey*.deb
+              python3-sawtooth-poet-cli*.deb
+              python3-sawtooth-poet-common*.deb
+              python3-sawtooth-poet-core*.deb
+              python3-sawtooth-poet-families*.deb
+              python3-sawtooth-poet-simulator*.deb
+              python3-sawtooth-rest-api*.deb
+              python3-sawtooth-sdk*.deb
+              python3-sawtooth-settings*.deb
+              python3-sawtooth-signing*.deb
+              python3-sawtooth-validator*.deb
+      args:
+        chdir: /tmp/sawtooth-packages/archive/build/debs/python
+
+    - name: Install new Sawtooth go tps
+      shell: >
+              dpkg -i sawtooth-intkey-tp-go*.deb
+              sawtooth-smallbank-tp-go*.deb
+      args:
+        chdir: /tmp/sawtooth-packages/archive/build/debs/go
+  become: yes
+
+- import_playbook: apply_templates.yaml

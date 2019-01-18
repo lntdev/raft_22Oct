@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if ! [[ -f /home/ubuntu/.sawtooth/keys/ubuntu.priv && /home/ubuntu/.sawtooth/keys/ubuntu.pub ]];
+then
+    echo "Creating user keys"
+    sudo -u ubuntu /usr/bin/sawtooth keygen
+    sudo chown -R ubuntu:ubuntu /home/ubuntu/.sawtooth/
+    sudo chmod 600 /home/ubuntu/.sawtooth/keys/*
+fi
+
+if ! [[ -f /etc/sawtooth/keys/validator.priv && -f /etc/sawtooth/keys/validator.pub ]];
+then
+    echo "Creating validator keys"
+    sudo /usr/bin/sawtooth admin keygen
+    sudo chown root:sawtooth /etc/sawtooth/keys/validator.*
+    sudo chmod 640 /etc/sawtooth/keys/validator.*
+fi
+
+if ! [[ -f /var/lib/sawtooth/config-genesis.batch ]];
+then
+    sudo rm /var/lib/sawtooth/*
+    sudo /usr/bin/sawtooth config genesis \
+        -o /var/lib/sawtooth/config-genesis.batch \
+        -k /home/ubuntu/.sawtooth/keys/ubuntu.priv
+    sudo -u sawtooth /usr/bin/sawtooth admin genesis \
+        /var/lib/sawtooth/config-genesis.batch
+    sleep 5
+fi

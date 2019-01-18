@@ -1,0 +1,10 @@
+---
+# Playbook for installing and configuring sawtooth validator.
+
+- name: Ping Validators
+  hosts: "{{ network_name }}"
+  tasks:
+    - action: ping
+  #become: yes
+  #any_errors_fatal: yes
+

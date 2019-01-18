@@ -1,0 +1,45 @@
+network_name: lrIndia
+
+# List of packages to install on the created nodes. apt-get package versioning
+# requirements can be added for version pinning.
+sawtooth_packages:
+  - python3-sawtooth-validator
+  - python3-sawtooth-cli
+  - python3-sawtooth-settings
+  - python3-sawtooth-rest-api
+  - python3-sawtooth-sdk
+  - python3-sawtooth-signing
+  - python3-cryptography
+  - sawtooth-smallbank-tp-go
+  - sawtooth-intkey-tp-go
+  - sawtooth-raft-engine
+
+# The repo to install Sawtooth from. "http://repo.sawtooth.me/" is prefixed
+sawtooth_repo: 'ubuntu/bumper/stable'
+
+# List of systemd services to be started when `lrmgr network start` is run
+sawtooth_services:
+  - sawtooth-validator
+  - sawtooth-rest-api
+  - sawtooth-settings-tp
+  - sawtooth-intkey-tp-go
+  - sawtooth-smallbank-tp-go
+  - sawtooth-raft-engine
+
+# List of config files
+sawtooth_configs:
+  - validator.toml
+  - rest_api.toml
+  - syslog.yaml
+
+# set to 'sgx' for hardware SGX, 'sim' for simulated
+#enclave: 'sim'
+
+max_batches_per_block: 150
+# Information about the influx db where stats will be sent.
+influx_url: http://3.112.46.44:8086
+influx_database: metrics_lr1_1_1_raft
+
+#syslog information
+syslog_server:
+syslog_port:

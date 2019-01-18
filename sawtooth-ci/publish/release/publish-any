@@ -1,0 +1,93 @@
+#!/bin/bash
+set -e
+
+help() {
+cat <<-EOH
+$0 requires the Sawtooth version to publish.
+
+Usage:
+
+    $0 v0.0.0
+
+Options:
+    -h
+    --help
+EOH
+}
+
+info() {
+    echo -e "\033[0;36m\n[--- $1 ---]\n\033[0m"
+}
+
+do_release() {
+    echo -e "Creating release for $1"
+
+    export GNUPGHOME=~/.gnupg/
+    gpg --list-keys
+
+    stamp=$(date +%F-%H)
+
+    info "Downloading archive"
+    if [ -a "tmp/$stamp.zip" ]; then
+        rm -rf -- "tmp/$stamp.zip"
+    fi
+    wget https://build.sawtooth.me/view/all/job/debs/job/build-debs-rc/lastSuccessfulBuild/artifact/*zip*/archive.zip -O "tmp/$stamp.zip"
+
+    info "Uncompressing archive"
+    if [ -a "tmp/$stamp" ]; then
+        rm -rf -- "tmp/$stamp"
+    fi
+    mkdir "tmp/$stamp"
+    unzip -q "tmp/$stamp.zip" -d "tmp/$stamp"
+
+    info "Adding artifacts to repository"
+    ls -al "tmp/$stamp/archive/build/debs/"
+    info "The next step will require the password for the signing key"
+    read -p "Press any key to continue"
+    aptly repo add "${branch}-rc" tmp/$stamp/archive/build/debs/*/*sawtooth*.deb
+    info "Creating snapshot"
+    aptly snapshot create "$1" from repo "${branch}-rc"
+    info "Publishing snapshot"
+    # aptly publish switch xenial s3:repo.sawtooth.me:ubuntu/nightly nightly-$stamp
+    aptly publish switch xenial "s3:repo.sawtooth.me:ubuntu/${branch}/stable" "$1"
+}
+
+do_cleanup() {
+    info "Cleanup time"
+    rm -rf -- "tmp/$stamp.zip"
+    rm -rf -- "tmp/$stamp"
+    read -p "Press any key to halt the box, or CTRL-C to abort"
+    sudo halt -p
+}
+
+if [ -n "$1" ]; then
+    case "$1" in
+        -h | --help)
+            help
+            exit 0
+            ;;
+        v1.0*)
+            branch=1.0
+            do_release "$@"
+            do_cleanup
+            ;;
+        v0.9*)
+            branch=0.9
+            do_release "$@"
+            do_cleanup
+            ;;
+        v0.8*)
+            branch=0.8
+            do_release "$@"
+            do_cleanup
+            ;;
+        *)
+            echo -e "Invalid selection\n"
+            help
+            exit 1
+            ;;
+    esac
+else
+    help
+    exit 1
+fi

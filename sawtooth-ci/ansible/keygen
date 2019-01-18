@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Generate initial key files for all nodes
+
+. config.sh
+
+if [ -z "$TERRAFORM_STATE_DIR" ]; then
+    echo "TERRAFORM_STATE_DIR must be set"
+    exit 1
+fi
+
+
+ansible \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    vgroup0 --list-hosts
+
+ansible \
+    --private-key=/etc/keys/sawtoothlake.pem \
+    -i inventory \
+    -b \
+    vgroup0 \
+    -a "sawtooth keygen --key-dir /etc/sawtooth-validator/keys {{sawtooth_validator_node_name}}"
+
+

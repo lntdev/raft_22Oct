@@ -1,0 +1,10 @@
+---
+- name: Stop Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Stop Sawtooth Services"
+      systemd:
+        state: stopped
+        name: "{{ item }}"
+      with_items: "{{ sawtooth_services }}"
+  become: yes

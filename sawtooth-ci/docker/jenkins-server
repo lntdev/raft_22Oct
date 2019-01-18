@@ -1,0 +1,15 @@
+FROM jenkins
+
+ENV no_proxy=.intel.com
+ENV https_proxy=http://proxy-us.intel.com:912
+ENV http_proxy=http://proxy-us.intel.com:911
+ENV NO_PROXY=.intel.com
+ENV HTTP_PROXY=http://proxy-us.intel.com:911
+ENV HTTPS_PROXY=http://proxy-us.intel.com:912
+
+USER jenkins 
+COPY proxy.xml /var/jenkins_home/proxy.xml
+COPY plugins.txt /usr/share/jenkins/plugins.txt
+RUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt
+
+USER root

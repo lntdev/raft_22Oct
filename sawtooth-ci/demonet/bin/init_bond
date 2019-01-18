@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [ -z $1 ] || [ -z $2 ]; then
+  echo "Usage: $0 [path_to_sawtooth] [validator_ip]"
+  exit 0
+fi
+
+SAWTOOTH=$(cd $1; pwd)
+
+export PATH=$SAWTOOTH/bin:$PATH
+export PYTHONPATH=:$SAWTOOTH/validator:$SAWTOOTH/signing:$PYTHONPATH
+
+PYTHONPATH=$SAWTOOTH/core:$SAWTOOTH/extensions/bond
+PYTHONPATH=$PYTHONPATH:$SAWTOOTH/core/build/lib.linux-x86_64-2.7
+PYTHONPATH=$PYTHONPATH:$SAWTOOTH/signing
+PYTHONPATH=$PYTHONPATH:$SAWTOOTH/signing/build/lib.linux-x86_64-2.7
+PYTHONPATH=$PYTHONPATH:$SAWTOOTH/validator
+PYTHONPATH=$PYTHONPATH:$SAWTOOTH/extensions/mktplace
+PYTHONPATH=$PYTHONPATH:$SAWTOOTH/extensions/arcade
+export PYTHONPATH
+
+btp init --url http://$2:8800
+cd $SAWTOOTH
+./bin/btp load -vvv --wait \
+    extensions/bond/data/libor.yaml \
+    extensions/bond/data/participant.yaml \
+    extensions/bond/data/organizations.yaml \
+    extensions/bond/data/bank_organizations.yaml \
+    extensions/bond/data/corp_bond_issue.yaml \
+    extensions/bond/data/govt_bond_issue.yaml \
+    extensions/bond/data/quotes_and_orders.yaml \
+    extensions/bond/data/holdings.yaml \
+    extensions/bond/data/bank_holdings.yaml \
+    extensions/bond/data/settlements.yaml
