@@ -1,0 +1,25 @@
+---
+- name: Generate Keys
+  hosts: "{{ network_name }}"
+  tasks:
+    - command: "sawadm keygen"
+      args:
+        creates: "/etc/sawtooth/keys/validator.*"
+  become: yes
+
+- name: "Fetch Network Keys"
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: "Fetch Network Public Key"
+      fetch:
+        src: /etc/sawtooth/keys/validator.pub
+        dest: /tmp/{{ network_name }}/keys/network/{{ ansible_host }}.pub
+        flat: yes
+        validate_checksum: yes
+
+- name: "Create Network Key List"
+  hosts: 127.0.0.1
+  tasks:
+    - name: "Format Network Keys"
+      shell: for key in /tmp/{{ network_name }}/keys/network/*.pub; do echo \"$(cat $key)\";done | tr '\n' ',' > /tmp/{{ network_name }}/keys/valkeys && rm -f /tmp/{{ network_name }}/keys/network/*.pub && truncate -s-1 /tmp/{{ network_name }}/keys/valkeys && echo "'[" > /tmp/tempfile_1.txt && truncate -s-1 /tmp/tempfile_1.txt && cat /tmp/{{ network_name }}/keys/valkeys >> /tmp/tempfile_1.txt && rm /tmp/{{ network_name }}/keys/valkeys && mv /tmp/tempfile_1.txt /tmp/{{ network_name }}/keys/valkeys && echo "]'" > /tmp/tempfile_2.txt && cat /tmp/{{ network_name }}/keys/valkeys > /tmp/tempfile_1.txt && cat /tmp/tempfile_2.txt >> /tmp/tempfile_1.txt && cp /tmp/tempfile_1.txt /tmp/{{ network_name }}/keys/valkeys
+

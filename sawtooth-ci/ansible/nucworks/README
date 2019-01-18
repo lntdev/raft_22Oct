@@ -1,0 +1,7 @@
+Run with ansible-playbook, passing your config file with the --extra-vars flag:
+
+ansible-playbook --extra-vars "@./path/to/config.yaml" playbook.yaml -i hosts.yaml
+
+For lr7n:
+
+ansible-playbook --extra-vars "@./configs/lr7n.yaml" start_sawtooth.yaml -i hosts.yaml

@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+set -e
+
+info() {
+    echo -e "\033[0;36m\n[--- $1 ---]\n\033[0m"
+}
+
+stamp=$(date +%Y%m%d)
+rand=rand$RANDOM
+version="0.8"
+
+
+info "Creating new instance"
+aws ec2 run-instances --count 1 --image-id ami-cd0f5cb6 --instance-type t2.micro --key-name ami_creation --security-group-ids sg-2accf056 --tag-specification 'ResourceType=instance,Tags=[{Key=AMI,Value='$stamp-$rand'}]'
+
+
+info "Waiting for instance to start"
+while state=$(aws ec2 describe-instances --filters "Name=tag-value,Values=$stamp-$rand" --output text --query 'Reservations[*].Instances[*].State.Name'); test "$state" = "pending"; do
+  sleep 1; echo -n '.'
+done; echo " $state"
+
+
+info "Retrieving info"
+output=$(aws ec2 describe-instances --filters "Name=tag-value,Values=$stamp-$rand" "Name=instance-state-name,Values=running" --output text --query 'Reservations[*].Instances[*].[InstanceId,PublicDnsName]')
+
+instance_id=$(echo $output |awk '{print $1}')
+public_dns=$(echo $output |awk '{print $2}')
+
+if [ -z ${instance_id+x} ];
+then
+    echo "Looks like instance_id didn't get set properly."
+    exit 1
+else
+    echo "Instance id: " $instance_id
+fi
+
+if [ -z ${public_dns+x} ];
+then
+    echo "Looks like public_dns didn't get set properly."
+    exit 1
+else
+    echo "Public DNS: " $public_dns
+fi
+
+
+info "Sleeping for 1m so ssh has time to start"
+sleep 60
+
+
+info "Applying ansible role"
+ansible-playbook -i $public_dns, ansible/base_ami.yaml -e 'ansible_python_interpreter=/usr/bin/python3' --private-key=~/.ssh/ami_creation.pem
+
+
+info "Creating AMI"
+ami_output=$(aws ec2 create-image --instance-id $instance_id --name "Sawtooth $version $stamp" --output text)
+echo $ami_output
+
+
+info "Wait for snapshot to complete"
+while ami_state=$(aws ec2 describe-images --image-ids $ami_output --output text --query 'Images[*].State'); test "$ami_state" = "pending"; do
+  sleep 1; echo -n '.'
+done; echo " $ami_state"
+
+
+info "Share the AMI with tci-lustre"
+aws ec2 modify-image-attribute --image-id $ami_output --launch-permission "{\"Add\":[{\"UserId\":\"863110175750\"}]}"
+
+
+info "Terminating Instance"
+aws ec2 terminate-instances --instance-id $instance_id
+
+
+info "AMI Info"
+echo "AMI Name: Sawtooth" $version $stamp
+echo "AMI ID: " $ami_output
+echo ""

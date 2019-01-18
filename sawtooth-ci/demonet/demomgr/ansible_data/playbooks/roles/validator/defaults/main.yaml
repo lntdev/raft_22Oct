@@ -1,0 +1,43 @@
+---
+sawtooth_validator_options: ""
+sawtooth_validator_listen:
+    - "0.0.0.0:5500/UDP gossip"
+    - "0.0.0.0:8800/TCP http"
+sawtooth_validator_endpoint_port: "5500"
+sawtooth_validator_endpoint_http_port: "8800"
+sawtooth_validator_target_wait_time: "20.0"
+sawtooth_validator_initial_wait_time: "150.0"
+sawtooth_validator_certificate_sample_length: "30"
+sawtooth_validator_min_transactions_per_block: "1"
+sawtooth_validator_max_transactions_per_block: "1000"
+sawtooth_validator_topology_algorithm: "RandomWalk"
+sawtooth_validator_target_connectivity: "3"
+sawtooth_logging_config_path: "/etc/sawtooth-validator/txnvalidator-logging.yaml"
+sawtooth_validator_web_pool_size: "32"
+sawtooth_validator_max_web_workers: "31"
+sawtooth_validator_network_flow_rate: "96000"
+sawtooth_validator_network_burst_rate: "128000"
+sawtooth_validator_delay_start: "false"
+sawtooth_validator_store_type: "lmdb"
+sawtooth_validator_delay_range:
+    - "0.00"
+    - "0.10"
+sawtooth_validator_use_fixed_delay: "true"
+sawtooth_validator_genesis_ledger: "false"
+sawtooth_validator_restore: "false"
+sawtooth_validator_administration_node: "NOT_SET"
+sawtooth_validator_key_file: "{key_dir}/{node}.wif"
+
+# Set to 0 for node0
+sawtooth_validator_initial_connectivity: 1
+
+# Passed in as extra vars by lrmgr
+sawtooth_packages:
+    - python-sawtooth-core
+    - python-sawtooth-validator
+    - python-sawtooth-signing
+sawtooth_validator_transaction_families: '["ledger.transaction.integer_key"]'
+sawtooth_validator_ledger_type: "poet1"
+sawtooth_local_validation: true 
+sawtooth_logging_syslog_ip: "52.202.97.218"
+sawtooth_logging_syslog_facility: "local5"

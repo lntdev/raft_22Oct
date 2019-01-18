@@ -1,0 +1,61 @@
+disable_existing_loggers: false
+formatters:
+  simple:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '[%(asctime)s.%(msecs)03d [%(threadName)s] %(module)s %(levelname)s] %(message)s'
+  remote:
+    format: '[{{ ansible_hostname }}] %(levelname)8s %(threadName)29s %(module)28s %(message)s'
+handlers:
+  debug:
+    backupCount: 90
+    class: logging.handlers.TimedRotatingFileHandler
+    filename: /var/log/sawtooth/{{ ansible_hostname }}-validator-debug.log
+    formatter: simple
+    level: DEBUG
+    when: midnight
+  error:
+    backupCount: 90
+    class: logging.handlers.TimedRotatingFileHandler
+    filename: /var/log/sawtooth/{{ ansible_hostname }}-validator-error.log
+    formatter: simple
+    level: ERROR
+    when: midnight
+  interconnect:
+    backupCount: 90
+    class: logging.handlers.TimedRotatingFileHandler
+    filename: /var/log/sawtooth/{{ ansible_hostname }}-interconnect.log
+    formatter: simple
+    level: ERROR
+    when: midnight
+  tp_state_handlers:
+    backupCount: 90
+    class: logging.handlers.TimedRotatingFileHandler
+    filename: /var/log/sawtooth/{{ ansible_hostname }}-tp_state_handlers.log
+    formatter: simple
+    level: ERROR
+    when: midnight
+  syslog:
+    address:
+    - '{{ syslog_server }}'
+    - {{ syslog_port }}
+    class: logging.handlers.SysLogHandler
+    formatter: remote
+    level: DEBUG
+loggers:
+  sawtooth_validator.networking.interconnect:
+    handlers:
+    - interconnect
+    level: ERROR
+    propagate: true
+  sawtooth_validator.execution.tp_state_handlers:
+    handlers:
+    - tp_state_handlers
+    level: ERROR
+    propagate: true
+root:
+  handlers:
+  - syslog
+  - error
+  - debug
+  level: DEBUG
+version: 1

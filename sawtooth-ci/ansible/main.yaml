@@ -1,0 +1,14 @@
+---
+
+- hosts: validators
+  remote_user: ubuntu
+  become: yes
+  roles:
+      - sawtooth-validator
+
+- hosts: test-client
+  remote_user: ubuntu
+  become: yes
+  roles:
+      - sawtooth-validator
+      - sawtooth-test-client

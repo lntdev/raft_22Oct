@@ -1,0 +1,20 @@
+---
+- name: Copy Keys
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: Copy Private Key
+      copy:
+        src: /opt/sawtooth-ci/ansible/nucworks/keys/{{ ansible_host }}/validator.priv
+        dest: /etc/sawtooth/keys/validator.priv
+        owner: root
+        group: sawtooth
+        mode: 0640
+
+    - name: Copy Public Key
+      copy:
+        src: /opt/sawtooth-ci/ansible/nucworks/keys/{{ ansible_host }}/validator.pub
+        dest: /etc/sawtooth/keys/validator.pub
+        owner: root
+        group: sawtooth
+        mode: 0644
+  become: yes

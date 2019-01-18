@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# These commands can be used to provision a clean Ubuntu 16.04 box so sawtooth
+# can be installed and configured.
+
+# For AWS, they can be run from an Ubuntu 16.04 and then a new ami can be
+# created from the resulting box and used for network management.
+
+sudo su
+
+apt-get install python-minimal python-pip python-dev
+
+pip install --upgrade pip
+pip install psutil cbor colorlog enum34 ipaddr lmdb numpy networkx ecdsa pybitcointools pyyaml requests twisted
+
+apt-key adv --keyserver keyserver.ubuntu.com --recv 44FC67F19B2466EA
+ssh ec2-52-202-97-218.compute-1.amazonaws.com
+cp read-repo /root/.ssh/id_rsa
+chmod 0600 /root/.ssh/id_rsa
+cp sawtooth-repo.list /etc/apt/sources.list.d/sawtooth-repo.list
+ssh repo@repo.sawtooth.me # Need to add as known host
+sudo apt-get update

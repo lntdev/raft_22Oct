@@ -1,0 +1,43 @@
+network_name: lr7n
+
+# List of packages to install on the created nodes. apt-get package versioning
+# requirements can be added for version pinning.
+sawtooth_packages:
+  - python3-sawtooth-cli
+  - python3-sawtooth-intkey
+  - python3-sawtooth-poet-cli
+  - python3-sawtooth-poet-common
+  - python3-sawtooth-poet-core
+  - python3-sawtooth-poet-families
+  - python3-sawtooth-poet-simulator
+  - python3-sawtooth-rest-api
+  - python3-sawtooth-sdk
+  - python3-sawtooth-settings
+  - python3-sawtooth-signing
+  - python3-sawtooth-validator
+
+# The repo to install Sawtooth from. "http://repo.sawtooth.me/" is prefixed
+sawtooth_repo: 'ubuntu/nightly'
+
+# List of systemd services to be started when `lrmgr network start` is run
+sawtooth_services:
+  - sawtooth-validator
+  - sawtooth-rest-api
+  - sawtooth-intkey-tp-python
+  - sawtooth-poet-validator-registry-tp
+  - sawtooth-settings-tp
+
+sawtooth_configs:
+  - validator.toml
+  - rest_api.toml
+
+# set to 'sgx' for hardware SGX, 'sim' for simulated
+enclave: 'sim'
+
+# Information about the influx db where stats will be sent.
+influx_url: https://stats.sawtooth.me:8087
+influx_database: metrics_lr7n
+
+#syslog information
+syslog_server: 192.168.200.51
+syslog_port: 514

@@ -1,0 +1,6 @@
+---
+- include: start_sawtooth_sgx.yaml
+  when: enclave == 'sgx'
+
+- include: start_sawtooth_sim.yaml
+  when: enclave == 'sim'

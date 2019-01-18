@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+info() {
+    echo -e "\033[0;36m\n[--- $1 ---]\n\033[0m"
+}
+
+export GNUPGHOME=/data/.gnupg/
+stamp=$(date +%F-%H)
+
+
+info "Downloading archive"
+wget https://build.sawtooth.me/view/Overview/job/Sawtooth-Hyperledger/job/sawtooth-core/job/0-8/lastSuccessfulBuild/artifact/*zip*/archive.zip -O tmp/$stamp-0-8.zip
+
+
+info "Uncompressing archive"
+mkdir tmp/$stamp-0-8
+unzip -q tmp/$stamp-0-8.zip -d tmp/$stamp-0-8
+
+
+info "Adding artifacts to repository"
+ls -al tmp/$stamp-0-8/archive/build/debs/
+aptly repo add 0.8-nightly tmp/$stamp-0-8/archive/build/debs/*sawtooth*.deb
+info "Creating snapshot"
+aptly snapshot create nightly-0-8-$stamp from repo 0.8-nightly
+info "Publishing snapshot"
+aptly publish switch xenial s3:repo.sawtooth.me:ubuntu/0.8/nightly nightly-0-8-$stamp
+
+info "Cleanup time"
+rm tmp/$stamp-0-8.zip
+rm -rf tmp/$stamp-0-8

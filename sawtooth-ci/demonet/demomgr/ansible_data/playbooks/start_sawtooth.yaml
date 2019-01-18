@@ -1,0 +1,24 @@
+---
+- name: Bootstrap Genesis Node
+  hosts: "{{ genesis_tag }}"
+  tasks:
+    - name: "Run `sawtooth admin {{ sawtooth_validator_ledger_type }}-genesis`"
+      command: "sawtooth admin {{ sawtooth_validator_ledger_type }}-genesis"
+      args:
+        creates: "/var/lib/sawtooth-validator/*"
+
+    - name: "Change genesis file ownership"
+      file:
+        path: /var/lib/sawtooth-validator
+        recurse: yes
+        owner: sawtooth
+        group: sawtooth
+  become: yes
+
+- name: Start Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - systemd:
+        state: started
+        name: sawtooth-validator
+  become: yes

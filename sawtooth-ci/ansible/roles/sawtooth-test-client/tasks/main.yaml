@@ -1,0 +1,32 @@
+---
+
+- name: Include distribution-specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version}}.yaml"
+    - "{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yaml"
+
+- name: Install pip
+  apt:
+    name=python-pip
+    state=present
+
+- name: Install testing dependencies
+  pip:
+    name={{ item }}
+    state=present
+  with_items: "{{ test_client_pip_packages }}"
+
+- name: Create test-packages directory
+  file:
+      path={{ test_package_local_dir }}
+      state=directory
+
+- name: Copy test-package files
+  copy:
+    src={{ test_packages_dir }}
+    dest={{ test_package_local_dir }}
+    owner=root
+    group=root
+    mode=0644
+  register: copy_result

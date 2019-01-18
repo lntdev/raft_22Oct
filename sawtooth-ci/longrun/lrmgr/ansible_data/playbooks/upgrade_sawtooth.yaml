@@ -1,0 +1,17 @@
+---
+- name: Upgrade Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: Update Apt
+      apt:
+        update_cache: yes
+
+    - name: Install updated Sawtooth packages
+      apt:
+        name={{ item }}
+        state=latest
+        force=yes
+      with_items: "{{ sawtooth_packages }}"
+  become: yes
+
+- import_playbook: apply_templates.yaml

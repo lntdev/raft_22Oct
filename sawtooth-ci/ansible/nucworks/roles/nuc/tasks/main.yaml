@@ -1,0 +1,121 @@
+- name: Install coredumpctl
+  apt:
+    name: systemd-coredump
+    update_cache: yes
+
+- name: Copy coredumpctl service unit file
+  copy:
+    src: systemd-coredump@.service
+    dest: /etc/systemd/system/systemd-coredump@.service
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Restart systemd-coredump and reload systemd units
+  systemd:
+      state: restarted
+      name: systemd-coredump.socket
+      daemon_reload: yes
+
+- name: Install git
+  apt:
+    name: git
+    update_cache: yes
+
+- name: Set ulimit for core dumps
+  pam_limits: domain='*' limit_type='-' limit_item=core value='unlimited'
+
+- name: Reload sysctl values
+  shell: sysctl --system
+
+- name: Install pip3
+  apt:
+      name=python3-pip
+      state=present
+      force=yes
+
+#- name: Install dowser
+#  shell: pip3 install git+https://github.com/boydjohnson/dowser-py3
+
+- name: Download Sawtooth Repo Key
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 44FC67F19B2466EA
+- name: Add Sawtooth Repo
+  apt_repository:
+    repo: "deb http://repo.sawtooth.me/{{ sawtooth_repo }} xenial universe"
+    state: present
+    filename: sawtooth-lake
+    update_cache: yes
+
+- name: Install Sawtooth
+  apt:
+    name={{ item }}
+    state=present
+    force=yes
+  with_items: "{{ sawtooth_packages }}"
+
+#- name: Install unzip
+#  apt:
+#      name=unzip
+#      state=present
+#      force=yes
+
+#- name: Clean packages directory
+#  file: path=/tmp/sawtooth-packages state=absent
+
+#- name: Create packages directory
+#  file: path=/tmp/sawtooth-packages state=directory
+
+#- name: Download sawtooth raft debian packages PR job
+#  get_url:
+#    url: "https://build.sawtooth.me/view/all/job/Sawtooth-Hyperledger/job/sawtooth-raft/job/master/lastSuccessfulBuild/artifact/ci/sawtooth-raft_0.1.1-dev1_amd64.deb"
+#    dest: /tmp/sawtooth-packages
+#- name: Download sawtooth raft debian packages PR job
+#  get_url:
+#    url: "https://build.sawtooth.me/job/Sawtooth-Hyperledger/job/sawtooth-raft/job/master/lastSuccessfulBuild/artifact/ci/sawtooth-raft-engine_0.1.2-dev9_amd64.deb"
+#    dest: /tmp/sawtooth-packages
+#- name: Install RAFT consensus packages
+#  shell: >
+#          ls -1 && \
+#          dpkg -i sawtooth-raft-engine_0.1.2-dev9_amd64.deb
+#  args:
+#    chdir: /tmp/sawtooth-packages
+
+
+- name: Configure Sawtooth Services
+  template:
+      src: "{{ item }}.j2"
+      dest: "/etc/default/{{ item }}"
+  with_items: "{{ sawtooth_services }}"
+
+- name: Copy config files
+  template:
+      src: "{{ item }}.j2"
+      dest: "/etc/sawtooth/{{ item }}"
+  with_items: "{{ sawtooth_configs }}"
+
+- name: Configure Sawtooth Logging
+  template:
+      src: "log_config.yaml.j2"
+      dest: "/etc/sawtooth/log_config.yaml"
+
+- name: Configure Sawtooth Rest API Logging
+  template:
+      src: "rest_api_log_config.yaml.j2"
+      dest: "/etc/sawtooth/rest_api_log_config.yaml"
+
+- name: Install telegraf
+  apt:
+      deb: https://dl.influxdata.com/telegraf/releases/telegraf_1.4.1-1_amd64.deb
+
+- name: Configure telegraf
+  template:
+      src: "telegraf.conf.j2"
+      dest: "/etc/telegraf/telegraf.conf"
+
+- name: Restart telegraf and reload systemd units
+  systemd:
+      state: restarted
+      name: telegraf
+      daemon_reload: yes

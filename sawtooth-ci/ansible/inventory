@@ -1,0 +1,174 @@
+#!/usr/bin/env python
+
+# Copyright 2016 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+
+import fnmatch
+import json
+import os
+import sys
+
+
+def find_tfstates():
+    tfstates = []
+    for root, dirnames, filenames in os.walk(os.environ.get('TERRAFORM_STATE_DIR', None)):
+        for filename in fnmatch.filter(filenames, '*.tfstate'):
+            tfstates.append(os.path.join(root, filename))
+    return tfstates
+
+def get_groups(states):
+    agroups = {}
+    for state in states:
+        for module in state['modules']:
+            for resource_key in module['resources']:
+                attributes = module['resources'][resource_key]['primary']['attributes']
+                if 'tags.ansible_groups' in attributes:
+                    for group_name in attributes['tags.ansible_groups'].split(','):
+                        group_name = group_name.strip()
+                        if group_name not in agroups:
+                            agroups[group_name] = {'hosts': []}
+                        agroups[group_name]['hosts'].append(attributes['tags.Name'])
+    return agroups
+
+def color_junk(states):
+    cgroups = {}
+    for state in states:
+        for module in state['modules']:
+            for resource_key in module['resources']:
+                resource = module['resources'][resource_key]
+                if 'tags.ansible_groups' in resource['primary']['attributes']:
+                    attributes = module['resources'][resource_key]['primary']['attributes']
+                    if 'tags.Environment' in attributes:
+                        color_group = attributes['tags.Environment']
+                        if color_group not in cgroups:
+                            cgroups[color_group] = {'endpoints': [], 'peers': []}
+                        cgroups[color_group]['endpoints'].append("http://{}:8800/".format(attributes['public_ip']))
+                        cgroups[color_group]['peers'].append(attributes['tags.Name'])
+    return cgroups
+
+def get_meta(states, groups):
+    meta = {'hostvars': {}}
+    for state in states:
+        for module in state['modules']:
+            for resource_key in module['resources']:
+                resource = module['resources'][resource_key]
+                attributes = module['resources'][resource_key]['primary']['attributes']
+                if 'tags.ansible_groups' in resource['primary']['attributes']:
+                    for i, agroup in enumerate(attributes['tags.ansible_groups'].split(',')):
+                        ledger_url = ''
+                        if 'vgroup' in agroup.strip():
+                            vgroup_name = agroup
+                            color_group = attributes['tags.Environment']
+                            ledger_url = groups['colors'][color_group][agroup]
+                            peer_list = groups['colors'][color_group][agroup+'_peers']
+                    meta['hostvars'][attributes['tags.Name']] = {
+                        "ansible_ssh_host":
+                            resource['primary']['attributes']['public_ip'],
+                        "ansible_ssh_user":
+                            resource['primary']['attributes']['tags.sshUser'],
+                        "ansible_ssh_extra_args":
+                            resource['primary']['attributes']['tags.sshArgs'],
+                        "sawtooth_validator_node_name": attributes['tags.Name'],
+                        "ansible_hostname": attributes['tags.Name'],
+                        "sawtooth_validator_ledger_url": ledger_url,
+                        "sawtooth_validator_peer_list": peer_list,
+                        "sawtooth_validator_endpoint_host":
+                            resource['primary']['attributes']['public_ip']
+                        }
+                for attr in resource['primary']['attributes']:
+                    if attr.startswith("tags.sawtooth_validator_"):
+                        varname = attr[len("tags."):]
+                        meta['hostvars'][attributes['tags.Name']][varname] = \
+                            resource['primary']['attributes'][attr]
+    return meta
+
+def get_color_url(colors, groups):
+    for color in groups['colors']:
+        for group in groups:
+            if 'vgroup' in group:
+                if group not in groups['colors'][color]:
+                    groups['colors'][color][group] = ','.join(groups['colors'][color]['endpoints'])
+                    if group == 'vgroup0':
+                        for c in groups['colors']:
+                            if c != color:
+                                for i in groups['colors'][c]['endpoints'][:2]:
+                                    groups['colors'][color][group] += ",{}".format(i)
+
+                    groups['colors'][color][group+'_peers'] = ','.join(groups['colors'][color]['peers'])
+                    if group == 'vgroup0':
+                        for c in groups['colors']:
+                            if c != color:
+                                for i in groups['colors'][c]['peers'][:2]:
+                                    groups['colors'][color][group+'_peers'] += ",{}".format(i)
+
+
+
+def get_ledger_url(states, vgroup_n):
+    # Return the first url
+    for state in states:
+        for module in state['modules']:
+            for resource_key in module['resources']:
+                resource = module['resources'][resource_key]
+                if 'tags.ansible_groups' in resource['primary']['attributes']:
+                    attributes = module['resources'][resource_key]['primary']['attributes']
+                    for i, agroup in enumerate(attributes['tags.ansible_groups'].split(',')):
+                        if 'vgroup' in agroup.strip():
+                            group = int(agroup[len('vgroup'):])
+                            if int(group) == vgroup_n - 1:
+                                return "http://{}:8800/".format(resource['primary']['attributes']['public_ip'])
+    assert(True)
+
+def main():
+    groups = {}
+
+    state_dir = os.environ.get('TERRAFORM_STATE_DIR', None)
+    if state_dir is None:
+        print >>sys.stderr, "TERRAFORM_STATE_DIR must be set"
+        sys.exit(1)
+
+    states = []
+    for state_file in find_tfstates():
+        with open(state_file, 'r') as fd:
+            states.append(json.load(fd))
+
+    groups = get_groups(states)
+
+    groups['colors'] = color_junk(states)
+    get_color_url(groups['colors'], groups)
+
+
+    # ledger_urls = {}
+    # for group_name in groups:
+    #     if "vgroup" in group_name:
+    #         vgroup_n = int(group_name[len('vgroup'):])
+    #         if vgroup_n == 0:
+    #             pass
+    #         ledger_urls[group_name] = get_ledger_url(states, vgroup_n)
+
+    groups['_meta'] = get_meta(states, groups)
+
+    # validators is the super group which contains all hosts from all other vgroups
+    groups['validators'] = {'hosts': []}
+    for group_name in groups:
+        if 'vgroup' in group_name:
+            for host in groups[group_name]['hosts']:
+                groups['validators']['hosts'].append(host)
+
+    if '--pretty' in sys.argv:
+        print json.dumps(groups, indent=4)
+    else:
+        print json.dumps(groups)
+
+main()

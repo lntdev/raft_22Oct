@@ -1,0 +1,11 @@
+---
+
+- name: Include distribution-specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version}}.yaml"
+    - "{{ ansible_os_family }}-{{ ansible_distribution_major_version }}.yaml"
+
+- name: fetch validator files
+  synchronize: mode=pull src={{ item }} dest=~/tests
+  with_items: "{{ collect_dirs }}"

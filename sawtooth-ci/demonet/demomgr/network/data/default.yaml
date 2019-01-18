@@ -1,0 +1,20 @@
+count: 10
+environment: green
+region: us-east-1
+image_id: ami-7b7bc26d
+instance_type: m3.medium
+key_file: /etc/keys/sawtoothlake.pem
+host_user: ubuntu
+
+# Can add apt-get package versioning to end
+sawtooth_packages:
+  - python-sawtooth-core
+  - python-sawtooth-validator
+  - python-sawtooth-signing
+sawtooth_transaction_families:
+  - "ledger.transaction.integer_key"
+sawtooth_ledger_type: poet1
+sawtooth_local_validation: true
+sawtooth_syslog_ip: '52.202.97.218'
+sawtooth_syslog_facility: 'local5'
+#sawtooth_path: "/home/user/sawtooth-core/"

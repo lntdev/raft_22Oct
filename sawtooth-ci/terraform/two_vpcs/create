@@ -1,0 +1,32 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "0 arguments supplied; expected \"plan\", \"up\" or \"destroy\""
+    exit
+fi
+
+if [ "$1" == "up" ]
+then
+    (cd green/ && terraform apply --var owner=$USER)
+    (cd blue/ && terraform apply --var owner=$USER)
+
+    cd green/ && GREEN=$(terraform output ips1)/32,$(terraform output ips2)/32,$(terraform output client_ips)/32 && cd ..
+    cd blue/ && BLUE=$(terraform output ips0)/32,$(terraform output ips1)/32,$(terraform output ips2)/32,$(terraform output client_ips)/32 && cd ..
+
+    sed -i "s#8\.8\.8\.8/32#$GREEN,$BLUE#" blue/security_groups-vars.tf
+    sed -i "s#8\.8\.8\.8/32#$GREEN,$BLUE#" green/security_groups-vars.tf
+
+    (cd green/ && terraform apply --var owner=$USER) && (cd blue/ && terraform apply --var owner=$USER)
+fi
+
+if [ "$1" == "plan" ]
+then
+	(cd green && terraform plan --var owner=$USER) && (cd blue/ && terraform plan --var owner=$USER)
+fi
+
+if [ "$1" == "destroy" ]
+then
+    (cd green/ && terraform destroy --var owner=$USER --force) && (cd blue/ && terraform destroy --var owner=$USER --force)
+    (git checkout green/security_groups-vars.tf) && (git checkout blue/security_groups-vars.tf)
+fi

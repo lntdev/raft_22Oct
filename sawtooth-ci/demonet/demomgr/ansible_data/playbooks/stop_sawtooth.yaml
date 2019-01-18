@@ -1,0 +1,8 @@
+---
+- name: Stop Sawtooth Network
+  hosts: "{{ network_name }}"
+  tasks:
+    - systemd:
+        state: stopped
+        name: sawtooth-validator
+  become: yes

@@ -1,0 +1,29 @@
+---
+sawtooth_packages:
+  - python3-sawtooth-cli
+  - python3-sawtooth-identity
+  - python3-sawtooth-intkey
+  - python3-sawtooth-manage
+  - python3-sawtooth-poet-cli
+  - python3-sawtooth-poet-common
+  - python3-sawtooth-poet-core
+  - python3-sawtooth-poet-families
+  - python3-sawtooth-poet-simulator
+  - python3-sawtooth-rest-api
+  - python3-sawtooth-sdk
+  - python3-sawtooth-settings
+  - python3-sawtooth-signing
+  - python3-sawtooth-validator
+  - python3-sawtooth-xo
+
+sawtooth_repo: ubuntu/0.8/stable
+
+sawtooth_repo_key_id: 8AA7AF1F1091A5FD
+
+sawtooth_services:
+  - sawtooth-intkey-tp-python
+  - sawtooth-poet-validator-registry-tp
+  - sawtooth-rest-api
+  - sawtooth-settings-tp
+  - sawtooth-validator
+  - sawtooth-xo-tp-python

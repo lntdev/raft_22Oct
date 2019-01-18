@@ -1,0 +1,130 @@
+FROM jenkins-slave-ubuntu-trusty
+
+RUN apt-get update && apt-get install -y -q \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-latex-recommended \
+    texlive-fonts-recommended \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN echo "deb http://download.rethinkdb.com/apt trusty main" \
+    | tee /etc/apt/sources.list.d/rethinkdb.list && \
+    wget -qO- https://download.rethinkdb.com/apt/pubkey.gpg | apt-key add -
+
+RUN wget -q -O setup-node.sh https://deb.nodesource.com/setup_6.x && \
+    chmod 755 setup-node.sh && \
+    ./setup-node.sh && \
+    apt-get install -y -q \
+    connect-proxy \
+    g++ \
+    libcrypto++-dev \
+    libjson0 \
+    libjson0-dev \
+    python-all-dev \
+    python-dev \
+    python-ipaddr \
+    python-numpy \
+    python-psutil \
+    python-setuptools \
+    python-stdeb \
+    python-twisted \
+    python-twisted-web \
+    python-yaml \
+    swig3.0 \
+    rethinkdb \
+    ruby2.0 \
+    openjdk-7-jdk \
+    rlwrap \
+    phantomjs \
+    nodejs \
+    cython \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install sphinx && \
+    pip install sphinxcontrib-httpdomain && \
+    pip install nose2 && \
+    pip install coverage && \
+    pip install cov-core && \
+    pip install pep8 && \
+    pip install pylint && \
+    pip install networkx && \
+    pip install setuptools-lint && \
+    pip install sphinx_rtd_theme && \
+    pip install iso8601 && \
+    pip install grpcio-tools && \
+    pip install beautifulsoup4
+
+RUN curl -s -S -o lein \
+       https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && \
+    chmod 755 lein && \
+    mv lein /usr/local/bin/lein && \
+    /usr/local/bin/lein
+
+RUN gem2.0 install sass
+
+RUN npm set progress=false && \
+    npm install -g yarn
+
+RUN ln -s /usr/bin/swig3.0 /usr/bin/swig
+
+RUN mkdir /home/jenkins/.ssh
+
+COPY ssh_config /home/jenkins/.ssh/config
+
+COPY keys/ /home/jenkins/.ssh/
+
+RUN chown -R jenkins:jenkins /home/jenkins/.ssh
+
+USER jenkins
+
+RUN echo '[user]\n\
+    name = Jenkins\n\
+    email = Jenkins@noemail.com'\n\
+    >> /home/jenkins/.gitconfig
+
+RUN mkdir /home/jenkins/packages && mkdir /home/jenkins/projects
+
+WORKDIR /home/jenkins/projects
+RUN wget https://pypi.python.org/packages/source/c/cbor/cbor-0.1.24.tar.gz && \
+    wget https://pypi.python.org/packages/source/c/colorlog/colorlog-2.6.0.tar.gz && \
+    wget https://pypi.python.org/packages/source/p/pybitcointools/pybitcointools-1.1.15.tar.gz && \
+    wget https://pypi.python.org/packages/source/l/lmdb/lmdb-0.89.tar.gz && \
+    wget https://pypi.python.org/packages/bf/3e/31d502c25302814a7c2f1d3959d2a3b3f78e509002ba91aea64993936876/enum34-1.1.6.tar.gz
+
+RUN tar xvfz cbor-0.1.24.tar.gz && \
+    tar xvfz colorlog-2.6.0.tar.gz && \
+    tar xvfz pybitcointools-1.1.15.tar.gz && \
+    tar xvfz lmdb-0.89.tar.gz && \
+    tar xvzf enum34-1.1.6.tar.gz
+
+WORKDIR /home/jenkins/projects/cbor-0.1.24
+RUN python setup.py --command-packages=stdeb.command bdist_deb
+RUN cp deb_dist/python-cbor*.deb /home/jenkins/packages/
+
+WORKDIR /home/jenkins/projects/colorlog-2.6.0
+RUN python setup.py --command-packages=stdeb.command bdist_deb
+RUN cp deb_dist/python-colorlog*.deb /home/jenkins/packages/
+
+WORKDIR /home/jenkins/projects/pybitcointools-1.1.15
+RUN python setup.py --command-packages=stdeb.command bdist_deb
+RUN cp deb_dist/python-pybitcointools*.deb /home/jenkins/packages/
+
+WORKDIR /home/jenkins/projects/lmdb-0.89
+RUN python setup.py --command-packages=stdeb.command bdist_deb
+RUN cp deb_dist/python-lmdb*.deb /home/jenkins/packages/
+
+WORKDIR /home/jenkins/projects/enum34-1.1.6
+RUN python setup.py --command-packages=stdeb.command bdist_deb
+RUN cp deb_dist/python-enum34*.deb /home/jenkins/packages/
+
+WORKDIR /home/jenkins/packages/
+RUN sudo dpkg -i *.deb
+
+WORKDIR /home/jenkins
+
+USER root
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]
+

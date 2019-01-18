@@ -1,0 +1,14 @@
+---
+# Playbook for installing and configuring sawtooth validator.
+# network_name and genesis_node must be passed in with extra vars, eg.:
+# 
+#     ansible-playbook setup_sawtooth.yaml \
+#       -e "network_name='test' \
+#       -e "genesis_node='node_name'
+#
+- name: Setup Validators
+  hosts: "{{ network_name }}"
+  roles:
+    - validator
+  become: yes
+  any_errors_fatal: yes

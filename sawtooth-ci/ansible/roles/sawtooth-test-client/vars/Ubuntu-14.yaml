@@ -1,0 +1,8 @@
+---
+
+test_client_pip_packages:
+  - nose2
+  - coverage
+  - cov-core
+
+test_package_local_dir: "/tmp/tests"

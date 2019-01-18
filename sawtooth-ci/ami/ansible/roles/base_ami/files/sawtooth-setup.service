@@ -1,0 +1,13 @@
+[Unit]
+Description=Sawtooth Setup
+After=network.target
+Before=sawtooth-validator.service
+
+[Service]
+User=ubuntu
+Group=ubuntu
+Type=oneshot
+ExecStart=/bin/bash /sbin/sawtooth-setup
+
+[Install]
+WantedBy=multi-user.target

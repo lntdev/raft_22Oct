@@ -1,0 +1,11 @@
+---
+# Playbook for installing and configuring sawtooth validator.
+
+- include: setup_sawtooth.yaml
+
+- name: Install SGX
+  hosts: "{{ network_name }}"
+  roles:
+    - sgx
+  become: yes
+  any_errors_fatal: yes

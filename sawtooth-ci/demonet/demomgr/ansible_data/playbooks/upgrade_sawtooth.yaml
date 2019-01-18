@@ -1,0 +1,14 @@
+- name: Upgrade Validators
+  hosts: "{{ network_name }}"
+  tasks:
+    - name: Update Apt Cache
+      apt: update_cache=yes
+
+    - name: Install Sawtooth
+      apt:
+        name={{ item }}
+        state=latest
+        force=yes
+      with_items: "{{ sawtooth_packages }}"
+  become: yes
+  any_errors_fatal: yes

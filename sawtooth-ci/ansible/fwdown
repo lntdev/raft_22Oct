@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. config.sh
+
+for i in `./chaininfo -i` ; do 
+  sudo iptables -D INPUT -s $i -p udp -m udp --dport 514 -m comment --comment "$PROJECT" -j ACCEPT
+done
+
+exit 0

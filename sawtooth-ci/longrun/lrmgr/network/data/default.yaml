@@ -1,0 +1,80 @@
+# Per network configuration is done in the YAML file passed to lrmgr network
+# create Other configuration is static across networks and is handle by the
+# Ansible playbooks in `lrmgr/ansible_data/` and the Terraform files in
+# `lrmgr/tf_data/`.
+
+# Number of nodes to create.
+count: 3
+
+# Environment tag. For organization only.
+environment: green
+
+# Region and availability zone to create the network in.
+region: ap-south-1
+availability_zone: ap-south-1a
+
+# AMI to create the network from. The default AMI is an internal Hyperledger
+# Sawtooth AMI.
+image_id: ami-0189d76e
+
+# Instance type to create
+instance_type: m3.large
+
+# Disk values
+volume_size: 100
+iops: 700
+
+# Path to the AWS key used to access the nodes
+key_file: /etc/keys/sawtoothlake.pem
+
+# User to log into the nodes as for configuration
+host_user: ubuntu
+
+# Version of sawtooth you're deploying. Different versions have different
+# plays to start sawtooth.
+sawtooth_version: 1.0
+
+# List of packages to install on the created nodes. apt-get package versioning
+# requirements can be added for version pinning.
+sawtooth_packages:
+  - python3-sawtooth-validator
+  - python3-sawtooth-cli
+  - python3-sawtooth-settings
+  - python3-sawtooth-rest-api
+  - python3-sawtooth-identity
+  - python3-sawtooth-intkey
+  - python3-sawtooth-poet-cli
+  - python3-sawtooth-poet-core
+  - python3-sawtooth-poet-families
+
+# The repo to install Sawtooth from. "http://repo.sawtooth.me/" is prefixed
+sawtooth_repo: 'ubuntu/nightly'
+
+# List of systemd services to be started when `lrmgr network start` is run
+sawtooth_services:
+  - sawtooth-validator
+  - sawtooth-rest-api
+  - sawtooth-identity-tp
+  - sawtooth-intkey-tp-python
+  - sawtooth-poet-validator-registry-tp
+  - sawtooth-settings-tp
+
+sawtooth_configs:
+  - validator.toml
+  - rest_api.toml
+
+# A path to a local copy of the sawtooth-core repository. This is only needed
+# to run simulations against a network.
+# sawtooth_path: /home/lradmin/sawtooth-core
+
+# Information about the influx db where stats will be sent.
+influx_url: https://stats.sawtooth.me:8087
+influx_database: telegraf
+
+# Information about the syslog server where logs will be sent.
+syslog_server: 52.202.97.218
+syslog_port: 514
+
+# Sawtooth settings
+max_batches_per_block: 500
+scheduler: parallel

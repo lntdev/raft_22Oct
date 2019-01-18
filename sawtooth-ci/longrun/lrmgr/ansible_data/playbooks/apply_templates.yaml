@@ -1,0 +1,27 @@
+---
+- name: Apply Configurations
+  hosts: "{{ network_name }}"
+
+  tasks:
+    - name: Configure Sawtooth Services
+      template:
+          src: "roles/validator/templates/{{ item }}.j2"
+          dest: "/etc/default/{{ item }}"
+      with_items: "{{ sawtooth_services }}"
+
+    - name: Copy config files
+      template:
+          src: "roles/validator/templates/{{ item }}.j2"
+          dest: "/etc/sawtooth/{{ item }}"
+      with_items: "{{ sawtooth_configs }}"
+
+    - name: Configure Sawtooth Logging
+      template:
+          src: "roles/validator/templates/log_config.yaml.j2"
+          dest: "/etc/sawtooth/log_config.yaml"
+
+    - name: Configure Sawtooth Rest API Logging
+      template:
+          src: "roles/validator/templates/rest_api_log_config.yaml.j2"
+          dest: "/etc/sawtooth/rest_api_log_config.yaml"
+  become: yes

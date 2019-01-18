@@ -1,0 +1,7 @@
+---
+
+- hosts: validators
+  remote_user: ubuntu
+  become: yes
+  roles:
+      - fetch
